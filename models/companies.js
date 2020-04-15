@@ -1,5 +1,6 @@
 const db = require("../db");
-const ExpressError = require("../expressError");
+const ExpressError = require("../helpers/expressError");
+const sqlForPartialUpdate = require("../helpers/partialUpdate")
 
 
 class Company {
@@ -34,7 +35,7 @@ class Company {
              logo_url
              FROM companies
              WHERE handle=$1`,
-             [handle]);
+      [handle]);
 
     if (result.rows.length === 0) {
       throw new ExpressError(`Cannot find company for ${handle}`, 404);
@@ -51,7 +52,7 @@ class Company {
    * {handle, name, num_employees, description, logo_url}
    */
 
-  static async create({handle, name, num_employees, description, logo_url}) {
+  static async create({ handle, name, num_employees, description, logo_url }) {
     const result = await db.query(`
       INSERT INTO companies (
         handle, 
@@ -61,16 +62,48 @@ class Company {
         logo_url)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING handle, name, num_employees, description, logo_url`,
-        [handle, name, num_employees, description, logo_url]);
+      [handle, name, num_employees, description, logo_url]);
 
     return result.rows[0];
   }
 
+  /**
+   * Update an existing company, accepts an object:
+   * {handle, name, num_employees, description, logo_url}
+   * 
+   * Returns the result of the update
+   * {handle, name, num_employees, description, logo_url}
+   */
 
-  // update company
+  static async update(items, handle) {
+    const sql = sqlForPartialUpdate("companies", items, "handle", handle);
 
-  // delete company
+    const result = await db.query(sql.query, sql.values);
+    return result.rows[0];
+  }
 
+  /**
+   * Delete a company, accepts a string:
+   * handle
+   * 
+   * Returns the deleted company:
+   * {handle, name, num_employees, description, logo_url}
+   */
+
+  static async delete(handle) {
+    const result = await db.query(`
+      DELETE from companies
+      WHERE handle=$1
+      RETURNING 
+        handle,
+        name,
+        num_employees,
+        description,
+        logo_url`,
+      [handle])
+    
+    return result.rows[0];
+   }
 }
 
 
