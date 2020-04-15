@@ -89,47 +89,41 @@ class Job {
   }
 
   /**
-   * Update an existing company, accepts an object:
-   * {handle, name, num_employees, description, logo_url}
+   * Update an existing job, accepts an object:
+   * {title, salary, equity, company_handle}
    * 
-   * Returns the result of the update
-   * {handle, name, num_employees, description, logo_url}
+   * Returns the result of the update:
+   * {id, title, salary, equity, company_handle, date_posted}
    */
 
-  static async update(items, handle) {
-    const sql = sqlForPartialUpdate("companies", items, "handle", handle);
+  static async update(items, id) {
+    const sql = sqlForPartialUpdate("jobs", items, "id", id);
 
     const result = await db.query(sql.query, sql.values);
 
     if (result.rows.length === 0) {
-      throw new ExpressError(`Cannot find company for ${handle}`, 404);
+      throw new ExpressError(`Cannot find job for ${id}`, 404);
     }
 
     return result.rows[0];
   }
 
   /**
-   * Delete a company, accepts a string:
-   * handle
+   * Delete a job, accepts a integer: id
    * 
    * Returns the deleted company:
    * {handle, name, num_employees, description, logo_url}
    */
 
-  static async delete(handle) {
+  static async delete(id) {
     const result = await db.query(`
-      DELETE from companies
-      WHERE handle=$1
-      RETURNING 
-        handle,
-        name,
-        num_employees,
-        description,
-        logo_url`,
-      [handle])
+      DELETE from jobs
+      WHERE id=$1
+      RETURNING id, title, salary, equity, company_handle, date_posted`,
+      [id])
 
     if (result.rows.length === 0) {
-      throw new ExpressError(`Cannot find company for ${handle}`, 404);
+      throw new ExpressError(`Cannot find job for ${id}`, 404);
     }
     
     return result.rows[0];
@@ -145,21 +139,45 @@ class Job {
    * 
    */
 
-  static async getByQueries(searchTerm="", min=0, max=2147483647) {
-    const result = await db.query(`
-      SELECT handle,
-             name,
-             num_employees,
-             description,
-             logo_url
-             FROM companies
-             WHERE (handle ILIKE $1 OR name ILIKE $1) 
-              AND num_employees BETWEEN $2 AND $3`, 
-             [`%${searchTerm}%`, min, max]);        // ways to not include all WHERE clauses
+  static async getByQueries(searchTerm, minSalary, minEquity) {
+
+    let query = `SELECT title,
+                        company_handle
+                        FROM jobs`;
+
+    const clauses = [];
+
+    if (searchTerm) {
+      clauses.push(`(title ILIKE $1 OR company_handle ILIKE $1)`);
+    }
+    if (minSalary) {
+      clauses.push(`salary > $2`);
+    }
+    if (minEquity) {
+      clauses.push(`equity > $3`);
+    }
+
+    if (clauses.length) {
+      const combinedClauses = clauses.join(" AND ");
+      query += ` WHERE ${combinedClauses}`;
+    }
+
+    // *** Another approach to dynamic where clause ***
+    // title = `AND name ILIKE ${sarchterm} OR company_handle ILIKE ${searchterm}`
+    // salary = `AND salary > ${minSalary}`
+    // `SELECT id,
+    //             salary,
+    //             equity,
+    //             comp_handle,
+    //             date_posted
+    //             FROM jobs
+    //             WHERE id>=1 ${title} ${salary} ${equity}`
+
+    const result = await db.query(query, [`${searchTerm}%`, min, max]);
 
     return result.rows;
   }
 }
 
 
-module.exports = Company;
+module.exports = Job;
