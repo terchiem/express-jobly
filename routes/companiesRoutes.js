@@ -18,7 +18,7 @@ router.get("/", async function(req, res, next){
     const { search, min_employees, max_employees } = req.query;
 
     if(search || min_employees || max_employees) {
-      if (min_employees > max_employees) {
+      if (Number(min_employees) > Number(max_employees)) {
         throw new ExpressError("Min cannot be larger than Max!", 400);
       }
       
