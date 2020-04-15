@@ -104,6 +104,31 @@ class Company {
     
     return result.rows[0];
    }
+
+
+  /**
+   * Search for companies by search term that have a number of employees
+   * between min and max. (max defaults to largest value possible for sql integers)
+   * 
+   * Returns an array of companies:
+   * [{handle, name, num_employees, description, logo_url}, ...]
+   * 
+   */
+
+  static async getByQueries(searchTerm="", min=0, max=2147483647) {
+    const result = await db.query(`
+      SELECT handle,
+             name,
+             num_employees,
+             description,
+             logo_url
+             FROM companies
+             WHERE (handle ILIKE $1 OR name ILIKE $1) 
+              AND num_employees BETWEEN $2 AND $3`,
+             [`%${searchTerm}%`, min, max]);
+
+    return result.rows;
+  }
 }
 
 

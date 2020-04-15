@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "additionalProperties": true,
+  "required": [
+      "company"
+  ],
+  "properties": {
+      "company": {
+          "$id": "#/properties/company",
+          "type": "object",
+          "title": "The Company Schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": {},
+          "examples": [
+              {
+                  "description": "Not the best company, not the worst.",
+                  "handle": "radius",
+                  "name": "Radius, Inc.",
+                  "num_employees": "100",
+                  "logo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Amazzone_ferita_-_Musei_Capitolini.jpg/400px-Amazzone_ferita_-_Musei_Capitolini.jpg"
+              }
+          ],
+          "additionalProperties": true,
+          "required": [],
+          "properties": {
+              "handle": {
+                  "$id": "#/properties/company/properties/handle",
+                  "type": "string",
+                  "title": "The Handle Schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": "",
+                  "examples": [
+                      "radius"
+                  ]
+              },
+              "name": {
+                  "$id": "#/properties/company/properties/name",
+                  "type": "string",
+                  "title": "The Name Schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": "",
+                  "examples": [
+                      "Radius, Inc."
+                  ]
+              },
+              "num_employees": {
+                  "$id": "#/properties/company/properties/num_employees",
+                  "type": "integer",
+                  "title": "The Num_employees Schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": "",
+                  "examples": [
+                      "100"
+                  ]
+              },
+              "description": {
+                  "$id": "#/properties/company/properties/description",
+                  "type": "string",
+                  "title": "The Description Schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": "",
+                  "examples": [
+                      "Not the best company, not the worst."
+                  ]
+              },
+              "logo_url": {
+                  "$id": "#/properties/company/properties/logo_url",
+                  "type": "string",
+                  "title": "The Logo_url Schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": "",
+                  "examples": [
+                      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Amazzone_ferita_-_Musei_Capitolini.jpg/400px-Amazzone_ferita_-_Musei_Capitolini.jpg"
+                  ]
+              }
+          }
+      }
+  }
+}
