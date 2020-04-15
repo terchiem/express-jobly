@@ -53,6 +53,18 @@ class Company {
    */
 
   static async create({ handle, name, num_employees, description, logo_url }) {
+    
+    // check if company handle already exists in the database
+    const company = await db.query(`SELECT handle FROM companies WHERE handle = $1`, [handle]);
+    if (company.rows.length) {
+      throw new ExpressError(`Company with handle ${handle} already exists!`, 400);
+    }
+
+
+    // TODO: try/catch block, can parse error
+    // MVCC 
+
+    // create new company
     const result = await db.query(`
       INSERT INTO companies (
         handle, 
@@ -79,6 +91,11 @@ class Company {
     const sql = sqlForPartialUpdate("companies", items, "handle", handle);
 
     const result = await db.query(sql.query, sql.values);
+
+    if (result.rows.length === 0) {
+      throw new ExpressError(`Cannot find company for ${handle}`, 404);
+    }
+
     return result.rows[0];
   }
 
@@ -101,6 +118,10 @@ class Company {
         description,
         logo_url`,
       [handle])
+
+    if (result.rows.length === 0) {
+      throw new ExpressError(`Cannot find company for ${handle}`, 404);
+    }
     
     return result.rows[0];
    }
@@ -124,8 +145,8 @@ class Company {
              logo_url
              FROM companies
              WHERE (handle ILIKE $1 OR name ILIKE $1) 
-              AND num_employees BETWEEN $2 AND $3`,
-             [`%${searchTerm}%`, min, max]);
+              AND num_employees BETWEEN $2 AND $3`, 
+             [`%${searchTerm}%`, min, max]);        // ways to not include all WHERE clauses
 
     return result.rows;
   }

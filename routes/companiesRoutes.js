@@ -9,7 +9,9 @@ const updateCompanySchema = require("../schemas/updateCompanySchema.json");
 const router = new express.Router();
 
 /** GET /
- *
+ *  Returns all companies by default. If a query string is included with a search term
+ *  or min/max employees, performs a specified query instead.
+ *  This should return JSON of {companies: [companyData, ...]}
  **/
 
 router.get("/", async function(req, res, next){
@@ -21,7 +23,7 @@ router.get("/", async function(req, res, next){
       if (Number(min_employees) > Number(max_employees)) {
         throw new ExpressError("Min cannot be larger than Max!", 400);
       }
-      
+
       result = await Company.getByQueries(search, min_employees, max_employees);
     } else {
       result = await Company.all();
@@ -51,9 +53,9 @@ router.post("/", async function(req, res, next) {
       return next(error);
     }
 
-  const newCompany = await Company.create(req.body.company);
+    const newCompany = await Company.create(req.body.company);
 
-  return res.json({company: newCompany});
+    return res.json({company: newCompany}); 
 
   } catch(err) {
     return next(err);
@@ -90,8 +92,7 @@ router.patch("/:handle", async function (req, res, next) {
 
     if (!result.valid) {
       let listOfErrors = result.errors.map(error => error.stack);
-      let error = new ExpressError(listOfErrors, 400);
-      return next(error);
+      throw new ExpressError(listOfErrors, 400);
     }
 
     const company = await Company.update(req.body.company, req.params.handle);
@@ -112,7 +113,7 @@ This should return JSON of {message: "Company deleted"}
 
 router.delete("/:handle", async function (req, res, next) {
   try {
-    const result = Company.delete(req.params.handle);
+    const result = await Company.delete(req.params.handle);
 
     return res.json({ message: "Company deleted" });
   } catch (err) {

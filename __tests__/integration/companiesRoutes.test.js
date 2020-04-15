@@ -42,7 +42,7 @@ describe("All /companies route tests", function () {
       const response = await request(app).get("/companies?min_employees=2&max_employees=1");
 
       expect(response.statusCode).toEqual(400);
-      expect(response.body).toEqual({ "status": 400, "message": "Min cannot be larger than Max!" });
+      expect(response.body).toEqual({ status: 400, message: "Min cannot be larger than Max!" });
 
     })
 
@@ -50,7 +50,7 @@ describe("All /companies route tests", function () {
       const response = await request(app).get("/companies/test1");
 
       expect(response.statusCode).toEqual(200);
-      expect(response.body).toEqual({ "company": testCompany });
+      expect(response.body).toEqual({ company: testCompany });
 
     });
 
@@ -58,7 +58,7 @@ describe("All /companies route tests", function () {
       const response = await request(app).get("/companies/xxx");
 
       expect(response.statusCode).toEqual(404);
-      expect(response.body).toEqual({ "status": 404, "message": `Cannot find company for xxx` });
+      expect(response.body).toEqual({ status: 404, message: `Cannot find company for xxx` });
     });
 
   });
@@ -82,10 +82,78 @@ describe("All /companies route tests", function () {
       expect(dbResult.rows[0]).toEqual({ handle: testCompany2.handle });
 
     });
+
+    test("Prevent creation of company with a handle that already exists", async function () {
+      const response = await request(app).post("/companies").send({ company: testCompany });
+
+      expect(response.statusCode).toEqual(400);
+      expect(response.body).toEqual({ status: 400, message: "Company with handle test1 already exists!" });
+    })
   });
 
-});
+  describe("PATCH /companies route tests", function () {
+
+    test("PATCH updates company details", async function () {
+      const data = { company: {
+        description: "updated description",
+        logo_url: "http://update.com"
+      }}
+
+      const response = await request(app).patch("/companies/test1").send(data);
+
+      expect(response.statusCode).toEqual(200);
+      expect(response.body.company.description).toEqual("updated description");
+      expect(response.body.company.logo_url).toEqual("http://update.com");
+
+      // confirm changes in the database
+      const dbResult = await db.query('SELECT description FROM companies WHERE handle=$1', ["test1"]);
+      expect(dbResult.rows[0].description).toEqual("updated description");
+    });
+
+    test("Does not update company with invalid data", async function () {
+      const response = await request(app).patch("/companies/test1").send({});
+
+      expect(response.statusCode).toEqual(400);
+      expect(response.body).toEqual({ "status": 400, "message": ["instance requires property \"company\""] })
+    })
+
+    test("Does not update a company that does not exist", async function () {
+      const data = { company: {
+        description: "updated description",
+        logo_url: "http://update.com"
+      }}
+
+      const response = await request(app).patch("/companies/zzzz").send(data);
+
+      expect(response.statusCode).toEqual(404);
+    })
+  });
+
+  describe("DELETE /companies route tests", function () {
+    test("Deletes a company", async function () {
+      const response = await request(app).delete("/companies/test1");
+
+      expect(response.statusCode).toEqual(200);
+      expect(response.body).toEqual({ message: "Company deleted" });
+
+      // confirm deletion in db
+      const dbResult = await db.query(`SELECT handle FROM companies`);
+      expect(dbResult.rows).toHaveLength(0);
+    })
+
+    test("Does not delete an invalid company", async function () {
+      const response = await request(app).delete("/companies/zzzz");
+
+      expect(response.statusCode).toEqual(404);
+    })
+
+  })
+
+
+
+
 
   afterAll(async function () {
     await db.end();
   });
+});
