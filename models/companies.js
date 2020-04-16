@@ -1,6 +1,8 @@
 const db = require("../db");
 const ExpressError = require("../helpers/expressError");
-const sqlForPartialUpdate = require("../helpers/partialUpdate")
+const sqlForPartialUpdate = require("../helpers/partialUpdate");
+
+const { ERROR_MESSAGES } = require("../config");
 
 
 class Company {
@@ -16,14 +18,15 @@ class Company {
              num_employees,
              description,
              logo_url
-             FROM companies`);
+             FROM companies
+             ORDER BY handle DESC`);
 
     return result.rows;
   }
 
   /** 
    * Returns one company by handle name:
-   * {handle, name, num_employees, description, logo_url}
+   * {handle, name, num_employees, description, logo_url, jobs: [ jobData, ... ]}
    */
 
   static async get(handle) {
@@ -38,10 +41,24 @@ class Company {
       [handle]);
 
     if (result.rows.length === 0) {
-      throw new ExpressError(`Cannot find company for ${handle}`, 404);
+      throw new ExpressError(ERROR_MESSAGES.companyNotFound + handle, 404);
     }
 
-    return result.rows[0];
+    let company = result.rows[0];
+
+    const jobsResult = await db.query(`
+      SELECT id,
+             title,
+             salary,
+             equity,
+             date_posted
+             FROM jobs
+             WHERE company_handle=$1`,
+             [handle]);
+
+    company.jobs = jobsResult.rows;
+
+    return company;
   }
 
   /**
@@ -57,7 +74,7 @@ class Company {
     // check if company handle already exists in the database
     const company = await db.query(`SELECT handle FROM companies WHERE handle = $1`, [handle]);
     if (company.rows.length) {
-      throw new ExpressError(`Company with handle ${handle} already exists!`, 400);
+      throw new ExpressError(ERROR_MESSAGES.companyAlreadyExists + handle, 400);
     }
 
 
@@ -93,7 +110,7 @@ class Company {
     const result = await db.query(sql.query, sql.values);
 
     if (result.rows.length === 0) {
-      throw new ExpressError(`Cannot find company for ${handle}`, 404);
+      throw new ExpressError(ERROR_MESSAGES.companyNotFound + handle, 404);
     }
 
     return result.rows[0];
@@ -120,7 +137,7 @@ class Company {
       [handle])
 
     if (result.rows.length === 0) {
-      throw new ExpressError(`Cannot find company for ${handle}`, 404);
+      throw new ExpressError(ERROR_MESSAGES.companyNotFound, 404);
     }
     
     return result.rows[0];
@@ -136,17 +153,39 @@ class Company {
    * 
    */
 
-  static async getByQueries(searchTerm="", min=0, max=2147483647) {
-    const result = await db.query(`
-      SELECT handle,
-             name,
-             num_employees,
-             description,
-             logo_url
-             FROM companies
-             WHERE (handle ILIKE $1 OR name ILIKE $1) 
-              AND num_employees BETWEEN $2 AND $3`, 
-             [`%${searchTerm}%`, min, max]);        // ways to not include all WHERE clauses
+  static async getByQueries(searchTerms) {
+    let queries = [];
+    let terms = [];
+    let startingPosition = 1;
+    
+    if (searchTerms.search) { 
+      queries.push(`(name ILIKE $${startingPosition} OR handle ILIKE $${startingPosition})`);
+      terms.push(`${searchTerms.search}%`);
+      startingPosition++;
+    }
+
+    if (searchTerms.min_employees) {
+      queries.push(`num_employees >= $${startingPosition}`);
+      terms.push(searchTerms.min_employees);
+      startingPosition++
+    }
+
+    if (searchTerms.max_employees) {
+      queries.push(`num_employees <= $${startingPosition}`);
+      terms.push(searchTerms.max_employees);
+      startingPosition++
+    }
+
+    const query = `SELECT handle,
+                          name,
+                          num_employees,
+                          description,
+                          logo_url
+                          FROM companies
+                          WHERE ${queries.join(" AND ")}
+                          ORDER BY handle DESC`;
+ 
+    const result = await db.query(query, terms);
 
     return result.rows;
   }

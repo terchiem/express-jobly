@@ -3,8 +3,6 @@ const app = require("../../app");
 const db = require("../../db");
 const Company = require("../../models/companies");
 
-
-
 describe("All /companies route tests", function () {
 
   let testCompany;
@@ -49,6 +47,8 @@ describe("All /companies route tests", function () {
     test("Searching for a company by handle should return all data for that company", async function () {
       const response = await request(app).get("/companies/test1");
 
+      testCompany.jobs = [];
+
       expect(response.statusCode).toEqual(200);
       expect(response.body).toEqual({ company: testCompany });
 
@@ -87,7 +87,7 @@ describe("All /companies route tests", function () {
       const response = await request(app).post("/companies").send({ company: testCompany });
 
       expect(response.statusCode).toEqual(400);
-      expect(response.body).toEqual({ status: 400, message: "Company with handle test1 already exists!" });
+      expect(response.body).toEqual({ status: 400, message: "Company already exists for test1" });
     })
   });
 

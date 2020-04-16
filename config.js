@@ -20,8 +20,18 @@ if (process.env.NODE_ENV === "test") {
   DB_URI = process.env.DATABASE_URL || "jobly";
 }
 
+const ERROR_MESSAGES = {
+  companyNotFound: `Cannot find company for `,
+  companyAlreadyExists: `Company already exists for `,
+  companyMinMaxEmployees: "Min cannot be larger than Max!",
+  jobNotFound: `Cannot find job with id `,
+  jobCreate: "Error creating new job.",
+  jobEquity: "Min equity cannot be greater than 1"
+}
+
 module.exports = {
   SECRET_KEY,
   PORT,
-  DB_URI
+  DB_URI,
+  ERROR_MESSAGES
 };

@@ -5,6 +5,7 @@ const jsonschema = require("jsonschema");
 const jobSchema = require("../schemas/jobSchema.json");
 const updateJobSchema = require("../schemas/updateJobSchema.json");
 
+const { ERROR_MESSAGES } = require("../config");
 
 const router = new express.Router();
 
@@ -20,6 +21,11 @@ router.get("/", async function(req, res, next){
     const {search, min_salary, min_equity } = req.query;
 
     if(search || min_salary || min_equity) {
+
+      if(min_equity > 1) {
+        throw new ExpressError(ERROR_MESSAGES.jobEquity, 400);
+      }
+
       result = await Job.getByQueries(req.query);
     } else {
       result = await Job.all();

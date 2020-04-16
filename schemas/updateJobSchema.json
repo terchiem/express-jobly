@@ -56,7 +56,8 @@
                   "default": 0,
                   "examples": [
                       0.9
-                  ]
+                  ],
+                  "maximum": 1.0
               },
               "company_handle": {
                   "$id": "#/properties/job/properties/company_handle",

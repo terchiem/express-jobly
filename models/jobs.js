@@ -2,6 +2,8 @@ const db = require("../db");
 const ExpressError = require("../helpers/expressError");
 const sqlForPartialUpdate = require("../helpers/partialUpdate")
 
+const { ERROR_MESSAGES } = require("../config");
+
 
 class Job {
 
@@ -42,7 +44,7 @@ class Job {
       [id]);
 
     if (result.rows.length === 0) {
-      throw new ExpressError(`Cannot find job with id ${id}`, 404);
+      throw new ExpressError(ERROR_MESSAGES.jobNotFound + id, 404);
     }
     const d = result.rows[0];
 
@@ -84,7 +86,7 @@ class Job {
 
     return result.rows[0];
     } catch(err){
-      throw new ExpressError("Error creating new job.", 400)
+      throw new ExpressError(ERROR_MESSAGES.jobCreate, 400);
     }
   }
 
@@ -97,15 +99,14 @@ class Job {
    */
 
   static async update(items, id) {
-    const sql = sqlForPartialUpdate("jobs", items, "id", id);
+    try {
+      const sql = sqlForPartialUpdate("jobs", items, "id", id);
+      const result = await db.query(sql.query, sql.values);
 
-    const result = await db.query(sql.query, sql.values);
-
-    if (result.rows.length === 0) {
-      throw new ExpressError(`Cannot find job with id ${id}`, 404);
-    }
-
-    return result.rows[0];
+      return result.rows[0];
+    } catch (err) {
+      throw new ExpressError(ERROR_MESSAGES.jobNotFound + id, 404);
+    }  
   }
 
   /**
@@ -116,17 +117,17 @@ class Job {
    */
 
   static async delete(id) {
-    const result = await db.query(`
-      DELETE from jobs
-      WHERE id=$1
-      RETURNING id, title, salary, equity, company_handle, date_posted`,
-      [id])
+    try {
+      const result = await db.query(`
+        DELETE from jobs
+        WHERE id=$1
+        RETURNING id, title, salary, equity, company_handle, date_posted`,
+        [id])
 
-    if (result.rows.length === 0) {
-      throw new ExpressError(`Cannot find job for ${id}`, 404);
+      return result.rows[0];
+    } catch (err) {
+      throw new ExpressError(ERROR_MESSAGES.jobNotFound + id, 404);
     }
-    
-    return result.rows[0];
    }
 
 
