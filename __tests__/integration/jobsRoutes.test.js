@@ -4,9 +4,7 @@ const db = require("../../db");
 const Company = require("../../models/companies");
 const Job = require("../../models/jobs");
 
-
-
-describe("All /jobs route tests", function () {
+describe("#jobs", function () {
 
   let testCompany, testJob;
   const testSearchTerm = "test";

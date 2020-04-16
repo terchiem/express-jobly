@@ -1,32 +1,22 @@
 const express = require("express");
-const Job = require("../models/jobs");
+const User = require("../models/users");
 const ExpressError = require("../helpers/expressError");
 const jsonschema = require("jsonschema");
-const jobSchema = require("../schemas/jobSchema.json");
-const updateJobSchema = require("../schemas/updateJobSchema.json");
+const userSchema = require("../schemas/userSchema.json");
+//const updateUserSchema = require("../schemas/updateUserSchema.json");
 
 const router = new express.Router();
 
 // /** GET /
-//  *  Returns all jobs by default. If a query string is included with a search term
-//  *  or min equity or salary, performs a specified query instead.
-//  *  This should return JSON of {jobs: [jobData, ...]}
+//  *  Returns all users.
+//  *  Returns JSON of {users: [userData, ...]}
 //  **/
 
 router.get("/", async function(req, res, next){
   try {
-    let result;
-    const {search, min_salary, min_equity } = req.query;
+    const users = await User.all();
 
-    if(search || min_salary || min_equity) {
-      result = await Job.getByQueries(req.query);
-    } else {
-      result = await Job.all();
-    }
-
-    const jobs = result.map( ({title, company_handle}) => ({title, company_handle}));
-  
-    return res.json({ jobs });
+    return res.json({ users });
   } catch(err) {
     return next(err);
   }
@@ -40,16 +30,16 @@ This should return JSON of {job: jobData}
 
 router.post("/", async function(req, res, next) {
   try {
-    const result = jsonschema.validate(req.body, jobSchema);
+    const result = jsonschema.validate(req.body, userSchema);
 
     if (!result.valid) {
       let listOfErrors = result.errors.map(error => error.stack);
       throw new ExpressError(listOfErrors, 400);
     }
 
-    const newJob = await Job.create(req.body.job);
+    const newUser = await User.create(req.body.user);
 
-    return res.json({job: newJob}); 
+    return res.json({user: newUser}); 
 
   } catch(err) {
     return next(err);
@@ -57,16 +47,16 @@ router.post("/", async function(req, res, next) {
 })
 
 // /**
-// GET /job/[handle]
-// This should return a single job found by its id.
+// GET /user/[username]
+// This should return a single user found by its userName.
 
-// This should return JSON of {job: jobData}
+// This should return JSON of {user: userData}
 //  */
-router.get("/:id", async function(req, res, next) {
+router.get("/:username", async function(req, res, next) {
   try {
-    const job = await Job.get(req.params.id);
+    const user = await User.get(req.params.username);
 
-    return res.json({ job });
+    return res.json({ user });
   } catch (err) {
     return next(err);
   }

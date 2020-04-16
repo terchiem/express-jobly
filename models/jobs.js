@@ -2,7 +2,7 @@ const db = require("../db");
 const ExpressError = require("../helpers/expressError");
 const sqlForPartialUpdate = require("../helpers/partialUpdate")
 
-const { ERROR_MESSAGES } = require("../config");
+const { ERROR_MESSAGES: {jobEquity, jobNotFound, jobCreate }} = require("../config");
 
 
 class Job {
@@ -31,8 +31,8 @@ class Job {
       SELECT title,
              salary,
              equity,
-             company_handle,
              date_posted,
+             companies.handle,
              companies.name,
              companies.num_employees,
              companies.description,
@@ -44,20 +44,21 @@ class Job {
       [id]);
 
     if (result.rows.length === 0) {
-      throw new ExpressError(ERROR_MESSAGES.jobNotFound + id, 404);
+      throw new ExpressError(jobNotFound + id, 404);
     }
-    const d = result.rows[0];
+    const {title, salary, equity, date_posted, 
+           handle, name, num_employees, description, logo_url} = result.rows[0] //destructure company data
 
     const jobObj = { 
-      title: d.title,
-      salary: d.salary,
-      equity: d.equity,
-      company: {handle: d.company_handle,
-                name: d.name,
-                num_employees: d.num_employees,
-                description: d.description,
-                logo_url: d.logo_url}, 
-      date_posted: d.date_posted
+      title,
+      salary,
+      equity,
+      company: {handle,
+                name,
+                num_employees,
+                description,
+                logo_url}, 
+      date_posted
     }
 
     return jobObj;
@@ -86,7 +87,7 @@ class Job {
 
     return result.rows[0];
     } catch(err){
-      throw new ExpressError(ERROR_MESSAGES.jobCreate, 400);
+      throw new ExpressError(jobCreate, 400);
     }
   }
 
@@ -105,7 +106,7 @@ class Job {
 
       return result.rows[0];
     } catch (err) {
-      throw new ExpressError(ERROR_MESSAGES.jobNotFound + id, 404);
+      throw new ExpressError(jobNotFound + id, 404);
     }  
   }
 
@@ -126,7 +127,7 @@ class Job {
 
       return result.rows[0];
     } catch (err) {
-      throw new ExpressError(ERROR_MESSAGES.jobNotFound + id, 404);
+      throw new ExpressError(jobNotFound + id, 404);
     }
    }
 
@@ -140,26 +141,30 @@ class Job {
    * 
    */
 
-  static async getByQueries(searchTerms) {    
+  static async getByQueries({ search, min_salary, min_equity }) {   
+    if(Number(min_equity) > 1) {
+      throw new ExpressError(jobEquity, 400);
+    }
+    
     let queries = [];
     let terms = [];
     let startingPosition = 1;
-    
-    if (searchTerms.search) { 
+
+    if (search) { 
       queries.push(`(title ILIKE $${startingPosition} OR company_handle ILIKE $${startingPosition})`);
-      terms.push(`${searchTerms.search}%`);
+      terms.push(`${search}%`);
       startingPosition++;
     }
 
-    if (searchTerms.min_salary) {
+    if (min_salary) {
       queries.push(`salary >= $${startingPosition}`);
-      terms.push(searchTerms.min_salary);
+      terms.push(min_salary);
       startingPosition++
     }
 
-    if (searchTerms.min_equity) {
+    if (min_equity) {
       queries.push(`equity >= $${startingPosition}`);
-      terms.push(searchTerms.min_equity);
+      terms.push(min_equity);
       startingPosition++
     }
 

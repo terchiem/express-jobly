@@ -18,7 +18,8 @@ const companiesRoutes = require("./routes/companiesRoutes");
 app.use("/companies", companiesRoutes);
 const jobsRoutes = require("./routes/jobsRoutes");
 app.use("/jobs", jobsRoutes);
-
+const userRoutes = require("./routes/userRoutes");
+app.use("/users", userRoutes);
 
 /** 404 handler */
 

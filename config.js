@@ -20,6 +20,8 @@ if (process.env.NODE_ENV === "test") {
   DB_URI = process.env.DATABASE_URL || "jobly";
 }
 
+const BCRYPT_WORK_FACTOR = 12;
+
 const ERROR_MESSAGES = {
   companyNotFound: `Cannot find company for `,
   companyAlreadyExists: `Company already exists for `,
@@ -27,12 +29,14 @@ const ERROR_MESSAGES = {
   jobNotFound: `Cannot find job with id `,
   jobCreate: "Error creating new job.",
   jobEquity: "Min equity cannot be greater than 1",
-  userNotFound: `Cannot find user for `
+  userNotFound: `Cannot find user for `,
+  userCreate: "Error creating new user.",
 }
 
 module.exports = {
   SECRET_KEY,
   PORT,
   DB_URI,
-  ERROR_MESSAGES
+  ERROR_MESSAGES,
+  BCRYPT_WORK_FACTOR
 };

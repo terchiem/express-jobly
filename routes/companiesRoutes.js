@@ -5,8 +5,6 @@ const jsonschema = require("jsonschema");
 const companySchema = require("../schemas/companySchema.json");
 const updateCompanySchema = require("../schemas/updateCompanySchema.json");
 
-const { ERROR_MESSAGES } = require("../config");
-
 const router = new express.Router();
 
 /** GET /
@@ -21,10 +19,6 @@ router.get("/", async function(req, res, next){
     const { search, min_employees, max_employees } = req.query;
 
     if(search || min_employees || max_employees) {
-      if (Number(min_employees) > Number(max_employees)) {
-        throw new ExpressError(ERROR_MESSAGES.companyMinMaxEmployees, 400);
-      }
-
       result = await Company.getByQueries(req.query);
     } else {
       result = await Company.all();

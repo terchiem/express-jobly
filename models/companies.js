@@ -2,7 +2,7 @@ const db = require("../db");
 const ExpressError = require("../helpers/expressError");
 const sqlForPartialUpdate = require("../helpers/partialUpdate");
 
-const { ERROR_MESSAGES } = require("../config");
+const { ERROR_MESSAGES: { companyAlreadyExists, companyMinMaxEmployees, companyNotFound} } = require("../config");
 
 
 class Company {
@@ -41,7 +41,7 @@ class Company {
       [handle]);
 
     if (result.rows.length === 0) {
-      throw new ExpressError(ERROR_MESSAGES.companyNotFound + handle, 404);
+      throw new ExpressError(companyNotFound + handle, 404);
     }
 
     let company = result.rows[0];
@@ -74,7 +74,7 @@ class Company {
     // check if company handle already exists in the database
     const company = await db.query(`SELECT handle FROM companies WHERE handle = $1`, [handle]);
     if (company.rows.length) {
-      throw new ExpressError(ERROR_MESSAGES.companyAlreadyExists + handle, 400);
+      throw new ExpressError(companyAlreadyExists + handle, 400);
     }
 
 
@@ -110,7 +110,7 @@ class Company {
     const result = await db.query(sql.query, sql.values);
 
     if (result.rows.length === 0) {
-      throw new ExpressError(ERROR_MESSAGES.companyNotFound + handle, 404);
+      throw new ExpressError(companyNotFound + handle, 404);
     }
 
     return result.rows[0];
@@ -137,7 +137,7 @@ class Company {
       [handle])
 
     if (result.rows.length === 0) {
-      throw new ExpressError(ERROR_MESSAGES.companyNotFound, 404);
+      throw new ExpressError(companyNotFound, 404);
     }
     
     return result.rows[0];
@@ -153,26 +153,30 @@ class Company {
    * 
    */
 
-  static async getByQueries(searchTerms) {
+  static async getByQueries({ search, min_employees, max_employees }) {
+    if (Number(min_employees) > Number(max_employees)) {
+      throw new ExpressError(companyMinMaxEmployees, 400);
+    }
+    
     let queries = [];
     let terms = [];
     let startingPosition = 1;
     
-    if (searchTerms.search) { 
+    if (search) { 
       queries.push(`(name ILIKE $${startingPosition} OR handle ILIKE $${startingPosition})`);
-      terms.push(`${searchTerms.search}%`);
+      terms.push(`${search}%`);
       startingPosition++;
     }
 
-    if (searchTerms.min_employees) {
+    if (min_employees) {
       queries.push(`num_employees >= $${startingPosition}`);
-      terms.push(searchTerms.min_employees);
+      terms.push(min_employees);
       startingPosition++
     }
 
-    if (searchTerms.max_employees) {
+    if (max_employees) {
       queries.push(`num_employees <= $${startingPosition}`);
-      terms.push(searchTerms.max_employees);
+      terms.push(max_employees);
       startingPosition++
     }
 

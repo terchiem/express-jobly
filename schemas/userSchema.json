@@ -1,0 +1,101 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "title": "The Root Schema",
+    "description": "The root schema comprises the entire JSON document.",
+    "default": {},
+    "additionalProperties": true,
+    "required": [
+        "user"
+    ],
+    "properties": {
+        "user": {
+            "$id": "#/properties/user",
+            "type": "object",
+            "title": "The User Schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "photo_url": "http://www.rithmschool.com/photo.jpg",
+                    "password": "secret",
+                    "username": "hackerman",
+                    "last_name": "Trail",
+                    "email": "i@i.com",
+                    "first_name": "Graham"
+                }
+            ],
+            "additionalProperties": true,
+            "required": [
+                "username",
+                "password",
+                "first_name",
+                "last_name",
+                "email"
+            ],
+            "properties": {
+                "username": {
+                    "$id": "#/properties/user/properties/username",
+                    "type": "string",
+                    "title": "The Username Schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "hackerman"
+                    ]
+                },
+                "password": {
+                    "$id": "#/properties/user/properties/password",
+                    "type": "string",
+                    "title": "The Password Schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "secret"
+                    ]
+                },
+                "first_name": {
+                    "$id": "#/properties/user/properties/first_name",
+                    "type": "string",
+                    "title": "The First_name Schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "Graham"
+                    ]
+                },
+                "last_name": {
+                    "$id": "#/properties/user/properties/last_name",
+                    "type": "string",
+                    "title": "The Last_name Schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "Trail"
+                    ]
+                },
+                "email": {
+                    "$id": "#/properties/user/properties/email",
+                    "type": "string",
+                    "title": "The Email Schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "i@i.com"
+                    ]
+                },
+                "photo_url": {
+                    "$id": "#/properties/user/properties/photo_url",
+                    "type": "string",
+                    "title": "The Photo_url Schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "http://www.rithmschool.com/photo.jpg"
+                    ]
+                }
+            }
+        }
+    }
+}

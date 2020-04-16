@@ -3,7 +3,7 @@ const app = require("../../app");
 const db = require("../../db");
 const Company = require("../../models/companies");
 
-describe("All /companies route tests", function () {
+describe("#companies", function () {
 
   let testCompany;
   const testSearchTerm = "test";
@@ -45,13 +45,12 @@ describe("All /companies route tests", function () {
     })
 
     test("Searching for a company by handle should return all data for that company", async function () {
-      const response = await request(app).get("/companies/test1");
+        const response = await request(app).get(`/companies/${testCompany.handle}`);
+   
+        testCompany.jobs = [];
 
-      testCompany.jobs = [];
-
-      expect(response.statusCode).toEqual(200);
-      expect(response.body).toEqual({ company: testCompany });
-
+        expect(response.statusCode).toEqual(200);
+        expect(response.body).toEqual({ company: testCompany });
     });
 
     test("Searching for a company with a nonexistent handle should return 404", async function () {
