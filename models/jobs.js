@@ -141,39 +141,16 @@ class Job {
 
   static async getByQueries(searchTerm, minSalary, minEquity) {
 
-    let query = `SELECT title,
-                        company_handle
-                        FROM jobs`;
+    const search = searchTerm ? `AND (title ILIKE $1 OR company_handle ILIKE $1)` : '';
+    const salary = minSalary ? `AND salary > $2` : '';
+    const equity = minEquity ? `AND equity > $3` : '';
+ 
+    const query = `SELECT title,
+                          company_handle
+                          FROM jobs
+                          WHERE id>=1 ${search} ${salary} ${equity}`;
 
-    const clauses = [];
-
-    if (searchTerm) {
-      clauses.push(`(title ILIKE $1 OR company_handle ILIKE $1)`);
-    }
-    if (minSalary) {
-      clauses.push(`salary > $2`);
-    }
-    if (minEquity) {
-      clauses.push(`equity > $3`);
-    }
-
-    if (clauses.length) {
-      const combinedClauses = clauses.join(" AND ");
-      query += ` WHERE ${combinedClauses}`;
-    }
-
-    // *** Another approach to dynamic where clause ***
-    // title = `AND name ILIKE ${sarchterm} OR company_handle ILIKE ${searchterm}`
-    // salary = `AND salary > ${minSalary}`
-    // `SELECT id,
-    //             salary,
-    //             equity,
-    //             comp_handle,
-    //             date_posted
-    //             FROM jobs
-    //             WHERE id>=1 ${title} ${salary} ${equity}`
-
-    const result = await db.query(query, [`${searchTerm}%`, min, max]);
+    const result = await db.query(query, [`${searchTerm}%`, minSalary, minEquity]);
 
     return result.rows;
   }
