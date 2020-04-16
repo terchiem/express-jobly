@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "additionalProperties": true,
+  "required": [
+      "job"
+  ],
+  "properties": {
+      "job": {
+          "$id": "#/properties/job",
+          "type": "object",
+          "title": "The Job Schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": {},
+          "examples": [
+              {
+                  "title": "developer",
+                  "salary": 10.0,
+                  "equity": 0.9,
+                  "company_handle": "apple"
+              }
+          ],
+          "additionalProperties": true,
+          "required": [
+          ],
+          "properties": {
+              "title": {
+                  "$id": "#/properties/job/properties/title",
+                  "type": "string",
+                  "title": "The Title Schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": "",
+                  "examples": [
+                      "developer"
+                  ]
+              },
+              "salary": {
+                  "$id": "#/properties/job/properties/salary",
+                  "type": "number",
+                  "title": "The Salary Schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": 0,
+                  "examples": [
+                      10.0
+                  ]
+              },
+              "equity": {
+                  "$id": "#/properties/job/properties/equity",
+                  "type": "number",
+                  "title": "The Equity Schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": 0,
+                  "examples": [
+                      0.9
+                  ]
+              },
+              "company_handle": {
+                  "$id": "#/properties/job/properties/company_handle",
+                  "type": "string",
+                  "title": "The Company_handle Schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": "",
+                  "examples": [
+                      "apple"
+                  ]
+              }
+          }
+      }
+  }
+}

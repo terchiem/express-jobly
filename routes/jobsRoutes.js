@@ -3,38 +3,35 @@ const Job = require("../models/jobs");
 const ExpressError = require("../helpers/expressError");
 const jsonschema = require("jsonschema");
 const jobSchema = require("../schemas/jobSchema.json");
+const updateJobSchema = require("../schemas/updateJobSchema.json");
 
 
 const router = new express.Router();
 
 // /** GET /
-//  *  Returns all companies by default. If a query string is included with a search term
-//  *  or min/max employees, performs a specified query instead.
-//  *  This should return JSON of {companies: [companyData, ...]}
+//  *  Returns all jobs by default. If a query string is included with a search term
+//  *  or min equity or salary, performs a specified query instead.
+//  *  This should return JSON of {jobs: [jobData, ...]}
 //  **/
 
-// router.get("/", async function(req, res, next){
-//   try {
-//     let result;
-//     const { search, min_employees, max_employees } = req.query;
+router.get("/", async function(req, res, next){
+  try {
+    let result;
+    const {search, min_salary, min_equity } = req.query;
 
-//     if(search || min_employees || max_employees) {
-//       if (Number(min_employees) > Number(max_employees)) {
-//         throw new ExpressError("Min cannot be larger than Max!", 400);
-//       }
+    if(search || min_salary || min_equity) {
+      result = await Job.getByQueries(req.query);
+    } else {
+      result = await Job.all();
+    }
 
-//       result = await Company.getByQueries(search, min_employees, max_employees);
-//     } else {
-//       result = await Company.all();
-//     }
-
-//     const companies = result.map( c => ({handle: c.handle, name: c.name}));
+    const jobs = result.map( j => ({title: j.title, company_handle: j.company_handle}));
   
-//     return res.json({ companies });
-//   } catch(err) {
-//     return next(err);
-//   }
-// });
+    return res.json({ jobs });
+  } catch(err) {
+    return next(err);
+  }
+});
 
 /**POST /jobs
 This should create a new job and return the newly created job.
@@ -61,63 +58,63 @@ router.post("/", async function(req, res, next) {
 })
 
 // /**
-// GET /companies/[handle]
-// This should return a single company found by its id.
+// GET /job/[handle]
+// This should return a single job found by its id.
 
-// This should return JSON of {company: companyData}
+// This should return JSON of {job: jobData}
 //  */
-// router.get("/:handle", async function(req, res, next) {
-//   try {
-//     const company = await Company.get(req.params.handle);
+router.get("/:id", async function(req, res, next) {
+  try {
+    const job = await Job.get(req.params.id);
 
-//     return res.json({ company });
-//   } catch (err) {
-//     return next(err);
-//   }
-// })
+    return res.json({ job });
+  } catch (err) {
+    return next(err);
+  }
+})
 
 
 // /** 
-// PATCH /companies/[handle]
-// This should update an existing company and return the updated company.
+// PATCH /jobs/[id]
+// This should update an existing job and return the updated job.
 
-// This should return JSON of {company: companyData}
+// This should return JSON of {job: jobData}
 // */
 
-// router.patch("/:handle", async function (req, res, next) {
-//   try {
-//     const result = jsonschema.validate(req.body, updateCompanySchema);
+router.patch("/:id", async function (req, res, next) {
+  try {
+    const result = jsonschema.validate(req.body, updateJobSchema);
 
-//     if (!result.valid) {
-//       let listOfErrors = result.errors.map(error => error.stack);
-//       throw new ExpressError(listOfErrors, 400);
-//     }
+    if (!result.valid) {
+      let listOfErrors = result.errors.map(error => error.stack);
+      throw new ExpressError(listOfErrors, 400);
+    }
 
-//     const company = await Company.update(req.body.company, req.params.handle);
+    const job = await Job.update(req.body.job, req.params.id);
 
-//     return res.json({ company });
-//   } catch (err) {
-//     return next(err);
-//   }
-// });
+    return res.json({ job });
+  } catch (err) {
+    return next(err);
+  }
+});
 
 
 // /**
-// DELETE /companies/[handle]
-// This should remove an existing company and return a message.
+// DELETE /jobs/[id]
+// This should remove an existing job and return a message.
 
-// This should return JSON of {message: "Company deleted"}
+// This should return JSON of {message: "Job deleted"}
 // */
 
-// router.delete("/:handle", async function (req, res, next) {
-//   try {
-//     const result = await Company.delete(req.params.handle);
+router.delete("/:id", async function (req, res, next) {
+  try {
+    const result = await Job.delete(req.params.id);
 
-//     return res.json({ message: "Company deleted" });
-//   } catch (err) {
-//     return next(err);
-//   }
-// })
+    return res.json({ message: "Job deleted" });
+  } catch (err) {
+    return next(err);
+  }
+})
 
 
 module.exports = router;

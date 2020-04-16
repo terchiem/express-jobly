@@ -36,13 +36,13 @@ class Job {
              companies.description,
              companies.logo_url
              FROM jobs
-             WHERE id=$1
       JOIN companies
-      ON jobs.company_handle = companies.handle`,
+      ON jobs.company_handle = companies.handle
+      WHERE id=$1`,
       [id]);
 
     if (result.rows.length === 0) {
-      throw new ExpressError(`Cannot find job for ${id}`, 404);
+      throw new ExpressError(`Cannot find job with id ${id}`, 404);
     }
     const d = result.rows[0];
 
@@ -102,7 +102,7 @@ class Job {
     const result = await db.query(sql.query, sql.values);
 
     if (result.rows.length === 0) {
-      throw new ExpressError(`Cannot find job for ${id}`, 404);
+      throw new ExpressError(`Cannot find job with id ${id}`, 404);
     }
 
     return result.rows[0];
@@ -139,18 +139,36 @@ class Job {
    * 
    */
 
-  static async getByQueries(searchTerm, minSalary, minEquity) {
+  static async getByQueries(searchTerms) {    
+    let queries = [];
+    let terms = [];
+    let startingPosition = 1;
+    
+    if (searchTerms.search) { 
+      queries.push(`(title ILIKE $${startingPosition} OR company_handle ILIKE $${startingPosition})`);
+      terms.push(`${searchTerms.search}%`);
+      startingPosition++;
+    }
 
-    const search = searchTerm ? `AND (title ILIKE $1 OR company_handle ILIKE $1)` : '';
-    const salary = minSalary ? `AND salary > $2` : '';
-    const equity = minEquity ? `AND equity > $3` : '';
- 
+    if (searchTerms.min_salary) {
+      queries.push(`salary >= $${startingPosition}`);
+      terms.push(searchTerms.min_salary);
+      startingPosition++
+    }
+
+    if (searchTerms.min_equity) {
+      queries.push(`equity >= $${startingPosition}`);
+      terms.push(searchTerms.min_equity);
+      startingPosition++
+    }
+
     const query = `SELECT title,
                           company_handle
                           FROM jobs
-                          WHERE id>=1 ${search} ${salary} ${equity}`;
-
-    const result = await db.query(query, [`${searchTerm}%`, minSalary, minEquity]);
+                          WHERE ${queries.join(" AND ")}
+                          ORDER BY date_posted DESC`;
+ 
+    const result = await db.query(query, terms);
 
     return result.rows;
   }
