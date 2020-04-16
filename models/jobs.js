@@ -101,7 +101,8 @@ class Job {
 
   static async update(items, id) {
     try {
-      const sql = sqlForPartialUpdate("jobs", items, "id", id);
+      const returnValues = ["id", "title", "salary", "equity", "company_handle", "date_posted"]
+      const sql = sqlForPartialUpdate("jobs", items, "id", id, returnValues);
       const result = await db.query(sql.query, sql.values);
 
       return result.rows[0];
@@ -118,6 +119,7 @@ class Job {
    */
 
   static async delete(id) {
+
     try {
       const result = await db.query(`
         DELETE from jobs
@@ -125,11 +127,15 @@ class Job {
         RETURNING id, title, salary, equity, company_handle, date_posted`,
         [id])
 
+      if (result.rows.length === 0) {
+        throw new ExpressError(jobNotFound + id, 404);
+      }
+
       return result.rows[0];
     } catch (err) {
       throw new ExpressError(jobNotFound + id, 404);
     }
-   }
+  }
 
 
   /**

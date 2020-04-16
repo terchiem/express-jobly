@@ -3,7 +3,7 @@ const User = require("../models/users");
 const ExpressError = require("../helpers/expressError");
 const jsonschema = require("jsonschema");
 const userSchema = require("../schemas/userSchema.json");
-//const updateUserSchema = require("../schemas/updateUserSchema.json");
+const updateUserSchema = require("../schemas/updateUserSchema.json");
 
 const router = new express.Router();
 
@@ -64,24 +64,24 @@ router.get("/:username", async function(req, res, next) {
 
 
 // /** 
-// PATCH /jobs/[id]
-// This should update an existing job and return the updated job.
+// PATCH /users/[username]
+// This should update an existing user and return the updated user.
 
-// This should return JSON of {job: jobData}
+// This should return JSON of {user: userData}
 // */
 
-router.patch("/:id", async function (req, res, next) {
+router.patch("/:username", async function (req, res, next) {
   try {
-    const result = jsonschema.validate(req.body, updateJobSchema);
+    const result = jsonschema.validate(req.body, updateUserSchema);
 
     if (!result.valid) {
       let listOfErrors = result.errors.map(error => error.stack);
       throw new ExpressError(listOfErrors, 400);
     }
 
-    const job = await Job.update(req.body.job, req.params.id);
+    const user = await User.update(req.body.user, req.params.username);
 
-    return res.json({ job });
+    return res.json({ user });
   } catch (err) {
     return next(err);
   }
@@ -89,17 +89,17 @@ router.patch("/:id", async function (req, res, next) {
 
 
 // /**
-// DELETE /jobs/[id]
-// This should remove an existing job and return a message.
+// DELETE /users/[username]
+// This should remove an existing user and return a message.
 
-// This should return JSON of {message: "Job deleted"}
+// This should return JSON of {message: "User deleted"}
 // */
 
-router.delete("/:id", async function (req, res, next) {
+router.delete("/:username", async function (req, res, next) {
   try {
-    await Job.delete(req.params.id);
+    await User.delete(req.params.username);
 
-    return res.json({ message: "Job deleted" });
+    return res.json({ message: "User deleted" });
   } catch (err) {
     return next(err);
   }

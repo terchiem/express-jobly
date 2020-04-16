@@ -39,7 +39,7 @@ class User {
       [username]);
 
     if (result.rows.length === 0) {
-      throw new ExpressError(ERROR_MESSAGES.userNotFound + username, 404);
+      throw new ExpressError(userNotFound + username, 404);
     }
 
     return result.rows[0];
@@ -73,7 +73,7 @@ class User {
 
     return result.rows[0];
     } catch(err){
-      throw new ExpressError(userCreate +": "+ err.message, 400);
+      throw new ExpressError(userCreate, 400);
     }
   }
 
@@ -87,10 +87,19 @@ class User {
 
   static async update(items, username) {
     try {
-      const sql = sqlForPartialUpdate("users", items, "username", username);
+      const returnValues = [
+        "username", "first_name", "last_name", "email", "photo_url"
+      ];
+
+      const sql = sqlForPartialUpdate("users", items, "username", username, returnValues);
       const result = await db.query(sql.query, sql.values);
 
-      return result.rows[0];
+      const updatedUser = result.rows[0];
+
+      delete updatedUser.password;
+      delete updatedUser.is_admin;
+
+      return updatedUser;
     } catch (err) {
       throw new ExpressError(userNotFound + username, 404);
     }  
@@ -104,19 +113,18 @@ class User {
   //  */
 
   static async delete(username) {
-    try {
-      const result = await db.query(`
+    const result = await db.query(`
         DELETE from users
         WHERE username=$1
         RETURNING username, first_name, last_name, email, photo_url`,
         [username])
 
-      return result.rows[0];
-    } catch (err) {
+    if (result.rows.length === 0) {
       throw new ExpressError(userNotFound + username, 404);
     }
-   }
-
+    
+    return result.rows[0];
+  }
 }
 
 module.exports = User;

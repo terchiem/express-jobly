@@ -105,7 +105,8 @@ class Company {
    */
 
   static async update(items, handle) {
-    const sql = sqlForPartialUpdate("companies", items, "handle", handle);
+    const returnValues = ["handle", "name", "num_employees", "description", "logo_url"]
+    const sql = sqlForPartialUpdate("companies", items, "handle", handle, returnValues);
 
     const result = await db.query(sql.query, sql.values);
 
