@@ -26,7 +26,8 @@ const ERROR_MESSAGES = {
   companyMinMaxEmployees: "Min cannot be larger than Max!",
   jobNotFound: `Cannot find job with id `,
   jobCreate: "Error creating new job.",
-  jobEquity: "Min equity cannot be greater than 1"
+  jobEquity: "Min equity cannot be greater than 1",
+  userNotFound: `Cannot find user for `
 }
 
 module.exports = {
