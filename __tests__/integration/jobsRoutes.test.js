@@ -3,16 +3,20 @@ const app = require("../../app");
 const db = require("../../db");
 const Company = require("../../models/companies");
 const Job = require("../../models/jobs");
+const jwt = require("jsonwebtoken");
+const { SECRET_KEY, ERROR_MESSAGES: {authNotLoggedIn, authNotAdmin} } = require("../../config");
 
 describe("#jobs", function () {
 
-  let testCompany, testJob;
+  let testCompany, testJob, testAdminToken;
   const testSearchTerm = "test";
   const testMinSalary = 500;
 
   beforeEach(async function () {
     await db.query("DELETE FROM companies");
     await db.query("DELETE FROM jobs");
+
+    testAdminToken = await jwt.sign({username:"admin", is_admin:true}, SECRET_KEY);
 
     testCompany = await Company.create({
       handle: "test1",
@@ -32,21 +36,22 @@ describe("#jobs", function () {
 
   describe("GET /jobs route tests", function () {
     test("GET /jobs should return title, company_handle of all jobs", async function () {
-      const response = await request(app).get("/jobs");
+      const response = await request(app).get("/jobs").send({_token: testAdminToken});
 
       expect(response.statusCode).toEqual(200);
       expect(response.body).toEqual({ jobs: [{ title: testJob.title, company_handle: testJob.company_handle }] });
     })
 
     test("Using query paramaters returns title, company_handle of valid jobs", async function () {
-      const response = await request(app).get(`/jobs?search=${testSearchTerm}&min_salary=${testMinSalary}`);
+      const response = await request(app).get(`/jobs?search=${testSearchTerm}&min_salary=${testMinSalary}`)
+        .send({_token: testAdminToken});
 
       expect(response.statusCode).toEqual(200);
       expect(response.body.jobs).toEqual([{ title: testJob.title, company_handle: testJob.company_handle }]);
     });
 
     test("Searching for a min equity greater than 1 throws an error", async function () {
-      const response = await request(app).get("/jobs?min_equity=2");
+      const response = await request(app).get("/jobs?min_equity=2").send({_token: testAdminToken});
 
       expect(response.statusCode).toEqual(400);
       expect(response.body).toEqual({ status: 400, message: "Min equity cannot be greater than 1" });
@@ -54,7 +59,7 @@ describe("#jobs", function () {
     })
 
     test("Searching for a job by id should return all data for that job", async function () {
-      const response = await request(app).get(`/jobs/${testJob.id}`);
+      const response = await request(app).get(`/jobs/${testJob.id}`).send({_token: testAdminToken});
 
       testJob.company = testCompany;
       testJob.date_posted = testJob.date_posted.toJSON();
@@ -68,10 +73,17 @@ describe("#jobs", function () {
     });
 
     test("Searching for a job with a nonexistent id should return 404", async function () {
-      const response = await request(app).get("/jobs/0");
+      const response = await request(app).get("/jobs/0").send({_token: testAdminToken});
 
       expect(response.statusCode).toEqual(404);
       expect(response.body).toEqual({ status: 404, message: `Cannot find job with id 0` });
+    });
+
+    test("Should show error when trying to GET /jobs without user token.", async function() {
+      const response = await request(app).get("/jobs");
+
+      expect(response.statusCode).toEqual(401);
+      expect(response.body).toEqual({status: 401, message: authNotLoggedIn})
     });
 
   });
@@ -85,7 +97,7 @@ describe("#jobs", function () {
     }
 
     test("POSTing valid job data should create a new job.", async function () {
-      const response = await request(app).post("/jobs").send({ job: testJob2 });
+      const response = await request(app).post("/jobs").send({ job: testJob2, _token: testAdminToken });
 
       const dbResult = await db.query('SELECT id, date_posted FROM jobs WHERE id=$1', [response.body.job.id]);
       
@@ -100,21 +112,28 @@ describe("#jobs", function () {
 
     test("Prevent creation of job with an invalid company handle", async function () {
       testJob2.company_handle = "invalid";
-      const response = await request(app).post("/jobs").send({ job: testJob2 });
+      const response = await request(app).post("/jobs").send({ job: testJob2, _token: testAdminToken });
 
       expect(response.statusCode).toEqual(400);
       expect(response.body).toEqual({ status: 400, message: "Error creating new job." });
     })
+
+    test("Should show error when trying to POST /jobs without admin token.", async function() {
+      const response = await request(app).post("/jobs").send({ job: testJob2 });
+
+      expect(response.statusCode).toEqual(403);
+      expect(response.body).toEqual({status: 403, message: authNotAdmin})
+    });
   });
 
   describe("PATCH /jobs route tests", function () {
-    const data = { job: {
+    const job = {
       title: "updated title",
       salary: 999
-    }}
+    }
 
     test("PATCH updates job details", async function () {
-      const response = await request(app).patch(`/jobs/${testJob.id}`).send(data);
+      const response = await request(app).patch(`/jobs/${testJob.id}`).send({job, _token: testAdminToken });
 
       expect(response.statusCode).toEqual(200);
       expect(response.body.job.title).toEqual("updated title");
@@ -126,14 +145,14 @@ describe("#jobs", function () {
     });
 
     test("Does not update job with invalid data", async function () {
-      const response = await request(app).patch(`/jobs/${testJob.id}`).send({});
+      const response = await request(app).patch(`/jobs/${testJob.id}`).send({_token: testAdminToken});
 
       expect(response.statusCode).toEqual(400);
       expect(response.body).toEqual({ "status": 400, "message": ["instance requires property \"job\""] })
     })
 
     test("Does not update a job that does not exist", async function () {
-      const response = await request(app).patch("/jobs/zzzz").send(data);
+      const response = await request(app).patch("/jobs/zzzz").send({job, _token: testAdminToken});
 
       expect(response.statusCode).toEqual(404);
     })
@@ -141,7 +160,7 @@ describe("#jobs", function () {
 
   describe("DELETE /jobs route tests", function () {
     test("Deletes a job", async function () {
-      const response = await request(app).delete(`/jobs/${testJob.id}`);
+      const response = await request(app).delete(`/jobs/${testJob.id}`).send({_token: testAdminToken});
 
       expect(response.statusCode).toEqual(200);
       expect(response.body).toEqual({ message: "Job deleted" });
@@ -152,7 +171,7 @@ describe("#jobs", function () {
     })
 
     test("Does not delete an invalid job", async function () {
-      const response = await request(app).delete("/jobs/zzzzzz");
+      const response = await request(app).delete("/jobs/zzzzzz").send({_token: testAdminToken});
 
       expect(response.statusCode).toEqual(404);
     })

@@ -2,13 +2,17 @@ const request = require("supertest");
 const app = require("../../app");
 const db = require("../../db");
 const User = require("../../models/users");
+const jwt = require("jsonwebtoken");
+const { SECRET_KEY, ERROR_MESSAGES: {authNotSameUser} } = require("../../config");
 
 describe("#users", function () {
 
-  let testUser;
+  let testUser, testUserToken;
 
   beforeEach(async function () {
     await db.query("DELETE FROM users");
+
+    testUserToken = await jwt.sign({username:"testuser", is_admin:false}, SECRET_KEY);
 
     testUser = await User.create({
       username: "testuser",
@@ -34,6 +38,7 @@ describe("#users", function () {
       const response = await request(app).get(`/users/${testUser.username}`);
 
       delete testUser.photo_url;
+      delete testUser.is_admin;
 
       expect(response.statusCode).toEqual(200);
       expect(response.body).toEqual({ user: testUser });
@@ -65,12 +70,12 @@ describe("#users", function () {
     
     test("POSTing valid user data should create a new user.", async function () {
       const response = await request(app).post("/users").send({ user: testUser2 });
-      const dbResult = await db.query('SELECT username FROM users WHERE username=$1', [response.body.user.username]);
+      const dbResult = await db.query('SELECT username FROM users WHERE username=$1', [testUser2.username]);
 
       delete testUser2.password;
 
       expect(response.statusCode).toEqual(200);
-      expect(response.body).toEqual({ user: testUser2 });
+      expect(response.body).toEqual({ token: expect.any(String) });
       expect(dbResult.rows).toHaveLength(1);
 
     });
@@ -85,13 +90,13 @@ describe("#users", function () {
   });
 
   describe("PATCH /users route tests", function () {
-    const data = { user: {
+    const user = {
       first_name: "updated name",
       photo_url: "updated url"
-    }}
+    }
 
     test("PATCH updates user details", async function () {
-      const response = await request(app).patch(`/users/${testUser.username}`).send(data);
+      const response = await request(app).patch(`/users/${testUser.username}`).send({user, _token: testUserToken});
 
       expect(response.statusCode).toEqual(200);
       expect(response.body.user.first_name).toEqual("updated name");
@@ -103,22 +108,36 @@ describe("#users", function () {
     });
 
     test("Does not update user with invalid data", async function () {
-      const response = await request(app).patch(`/users/${testUser.id}`).send({});
+      const response = await request(app).patch(`/users/${testUser.username}`).send({_token: testUserToken});
 
       expect(response.statusCode).toEqual(400);
       expect(response.body).toEqual({ "status": 400, "message": ["instance requires property \"user\""] })
     })
 
-    test("Does not update a user that does not exist", async function () {
-      const response = await request(app).patch("/users/invalid").send(data);
+    test("Does not update another user", async function () {
+      const testUser2 = await User.create({
+        username: "testuser2",
+        password: "password",
+        first_name: "test",
+        last_name: "man",
+        email: "b@b.com",
+        photo_url: "test photo"
+      });
 
-      expect(response.statusCode).toEqual(404);
+      const response = await request(app).patch("/users/testuser2").send({user, _token: testUserToken});
+
+      expect(response.statusCode).toEqual(403);
+
+      // check if user had updated
+      const result = await db.query(`SELECT first_name FROM users WHERE username='${testUser2.username}'`);
+      expect(result.rows[0].first_name).toEqual(testUser2.first_name);
     })
   });
 
   describe("DELETE /users route tests", function () {
     test("Deletes a user", async function () {
-      const response = await request(app).delete(`/users/${testUser.username}`);
+      const response = await request(app).delete(`/users/${testUser.username}`)
+        .send({_token: testUserToken});
 
       expect(response.statusCode).toEqual(200);
       expect(response.body).toEqual({ message: "User deleted" });
@@ -128,10 +147,24 @@ describe("#users", function () {
       expect(dbResult.rows).toHaveLength(0);
     })
 
-    test("Does not delete an invalid user", async function () {
-      const response = await request(app).delete("/users/zzzzzz");
+    test("Does not delete another user", async function () {
+      const testUser2 = await User.create({
+        username: "testuser2",
+        password: "password",
+        first_name: "test",
+        last_name: "man",
+        email: "b@b.com",
+        photo_url: "test photo"
+      });
 
-      expect(response.statusCode).toEqual(404);
+      const response = await request(app).delete("/users/testuser2")
+        .send({_token: testUserToken});
+
+      expect(response.statusCode).toEqual(403);
+
+      // check if user is still in db
+      const result = await db.query(`SELECT username FROM users WHERE username='${testUser2.username}'`);
+      expect(result.rows).toHaveLength(1);
     })
 
   })

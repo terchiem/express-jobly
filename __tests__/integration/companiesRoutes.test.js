@@ -74,7 +74,7 @@ describe("#companies", function () {
     });
 
     test("Should show error when trying to GET /companies without user token.", async function() {
-      const response = await request(app).get("/companies/xxx");
+      const response = await request(app).get("/companies");
 
       expect(response.statusCode).toEqual(401);
       expect(response.body).toEqual({status: 401, message: authNotLoggedIn})
