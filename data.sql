@@ -25,3 +25,5 @@ CREATE TABLE users (
     photo_url TEXT,
     is_admin BOOLEAN NOT NULL DEFAULT false    
 );
+
+--node-pg-migrate for changing databases

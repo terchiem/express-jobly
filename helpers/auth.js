@@ -38,8 +38,8 @@ function ensureLoggedIn(req, res, next) {
  */
 
 function ensureSameUser(req, res, next) {
-  if (!req.user || !(req.user.username === req.params.username)) {
-    const err = new ExpressError(authNotSameUser, 403);
+  if (!req.user || req.user.username !== req.params.username) {
+    const err = new ExpressError(authNotSameUser, 403); //401 would be more appropriate here
     return next(err);
   } else {
     return next();
