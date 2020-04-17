@@ -7,6 +7,29 @@ const { ERROR_MESSAGES:{ userCreate, userNotFound }, BCRYPT_WORK_FACTOR } = requ
 
 class User {
 
+  /** Takes a username and plaintext password.
+   * Retrieves hashed password of supplied username.
+   * Uses Bcrypt to compare hashed password and supplied password.
+   * Returns true if they match, false otherwise. 
+   */
+  
+  static async authenticate(username, password) {
+    const results = await db.query(`
+      SELECT password, is_admin 
+      FROM users
+      WHERE username = $1`,
+      [username]);
+    
+      if (!results.rows.length) throw new ExpressError(userNotFound + username, 404);
+    
+    const hashedPassword = results.rows[0].password;
+    const is_admin = results.rows[0].is_admin;
+    
+    return {valid: await bcrypt.compare(password, hashedPassword), is_admin}; 
+
+  }
+
+  
   /**
    * Returns all users:
    * [{username, first_name, last_name, email}, ...]
@@ -68,7 +91,7 @@ class User {
         email,
         photo_url)
         VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING username, first_name, last_name, email, photo_url`,
+        RETURNING username, first_name, last_name, email, photo_url, is_admin`,
       [username, hashedPassword, first_name, last_name, email, photo_url]);
 
     return result.rows[0];

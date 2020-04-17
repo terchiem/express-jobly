@@ -4,6 +4,7 @@ const ExpressError = require("../helpers/expressError");
 const jsonschema = require("jsonschema");
 const companySchema = require("../schemas/companySchema.json");
 const updateCompanySchema = require("../schemas/updateCompanySchema.json");
+const { ensureLoggedIn, ensureAdmin } = require("../helpers/auth");
 
 const router = new express.Router();
 
@@ -13,7 +14,7 @@ const router = new express.Router();
  *  This should return JSON of {companies: [companyData, ...]}
  **/
 
-router.get("/", async function(req, res, next){
+router.get("/", ensureLoggedIn, async function(req, res, next){
   try {
     let result;
     const { search, min_employees, max_employees } = req.query;
@@ -38,7 +39,7 @@ This should create a new company and return the newly created company.
 This should return JSON of {company: companyData}
 */
 
-router.post("/", async function(req, res, next) {
+router.post("/", ensureAdmin, async function(req, res, next) {
   try {
     const result = jsonschema.validate(req.body, companySchema);
 
@@ -63,7 +64,7 @@ This should return a single company found by its id.
 
 This should return JSON of {company: companyData}
  */
-router.get("/:handle", async function(req, res, next) {
+router.get("/:handle", ensureLoggedIn, async function(req, res, next) {
   try {
     const company = await Company.get(req.params.handle);
 
@@ -81,7 +82,7 @@ This should update an existing company and return the updated company.
 This should return JSON of {company: companyData}
 */
 
-router.patch("/:handle", async function (req, res, next) {
+router.patch("/:handle", ensureAdmin, async function (req, res, next) {
   try {
     const result = jsonschema.validate(req.body, updateCompanySchema);
 
@@ -106,7 +107,7 @@ This should remove an existing company and return a message.
 This should return JSON of {message: "Company deleted"}
 */
 
-router.delete("/:handle", async function (req, res, next) {
+router.delete("/:handle", ensureAdmin, async function (req, res, next) {
   try {
     const result = await Company.delete(req.params.handle);
 

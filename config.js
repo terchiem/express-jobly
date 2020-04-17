@@ -31,6 +31,10 @@ const ERROR_MESSAGES = {
   jobEquity: "Min equity cannot be greater than 1",
   userNotFound: `Cannot find user for `,
   userCreate: "Error creating new user.",
+  authInvalidPassword: "Password doesn't match our records.",
+  authNotLoggedIn: "Only available to logged in users.",
+  authNotSameUser: "You can only perform this action on yourself.",
+  authNotAdmin: "Only admin users can perform this action.",
 }
 
 module.exports = {
