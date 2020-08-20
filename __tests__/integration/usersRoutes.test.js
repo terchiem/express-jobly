@@ -25,7 +25,7 @@ describe("#users", function () {
   })
 
   describe("GET /users route tests", function () {
-    test("GET /users should return user data of all users", async function () {
+    test("Returns user data of all users", async function () {
       const response = await request(app).get("/users");
 
       const { username, first_name, last_name, email } = testUser;
