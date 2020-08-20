@@ -19,13 +19,13 @@
   },
   "homepage": "https://github.com/terchiem/express-jobly#readme",
   "dependencies": {
-    "bcrypt": "^4.0.1",
+    "bcrypt": ">=5.0.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "jsonschema": "^1.2.6",
     "jsonwebtoken": "^8.5.1",
     "morgan": "^1.10.0",
-    "pg": "^8.0.2"
+    "pg": "^8.3.2"
   },
   "devDependencies": {
     "supertest": "^4.0.2"
